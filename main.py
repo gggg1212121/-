@@ -1,182 +1,174 @@
-# app.py
 import streamlit as st
 
-# ----------------------
-# Page Config
-# ----------------------
-st.set_page_config(
-    page_title="MBTI test",
-    page_icon="🎀",
-    layout="centered"
-)
+# 페이지 설정
+st.set_page_config(page_title="나의 파스텔 MBTI 테스트", page_icon="✨", layout="centered")
 
-# ----------------------
-# Soft Pastel UI
-# ----------------------
-st.markdown(
-    """
+# 파스텔 톤 감성 CSS 적용
+st.markdown("""
     <style>
-    body {
-        background: linear-gradient(180deg, #fdfbfb 0%, #f7f6ff 100%);
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;500&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Noto Sans KR', sans-serif;
+        background-color: #fdfbfb;
     }
-    .card {
-        background: #ffffff;
-        padding: 28px;
-        border-radius: 24px;
-        margin-bottom: 24px;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+    
+    .main {
+        background: linear-gradient(135deg, #fff5f5 0%, #f0f4ff 100%);
     }
-    .title {
-        text-align: center;
-        font-size: 36px;
-        font-weight: 700;
+
+    .stButton>button {
+        width: 100%;
+        border-radius: 20px;
+        border: none;
+        padding: 15px;
+        background-color: #ffffff;
+        color: #777;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        font-size: 16px;
         margin-bottom: 10px;
     }
-    .subtitle {
-        text-align: center;
-        color: #777;
-        margin-bottom: 40px;
+
+    .stButton>button:hover {
+        background-color: #ffe3e3;
+        color: #ff8e8e;
+        transform: translateY(-2px);
     }
+
+    .question-box {
+        background-color: rgba(255, 255, 255, 0.7);
+        padding: 30px;
+        border-radius: 30px;
+        text-align: center;
+        margin-bottom: 30px;
+        border: 1px solid #eee;
+    }
+
+    .progress-bar {
+        height: 10px;
+        background-color: #eee;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+
     .result-card {
-        background: #fff7fb;
-        padding: 36px;
-        border-radius: 28px;
+        background-color: white;
+        padding: 40px;
+        border-radius: 30px;
         text-align: center;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
     }
+    
+    h1 { color: #ffadad; text-align: center; font-weight: 500; }
+    h2 { color: #97c1a9; text-align: center; }
+    p { color: #666; }
     </style>
-    """,
-    unsafe_allow_html=True
-)
+    """, unsafe_allow_html=True)
 
-# ----------------------
-# Question Data
-# (MBTI letters hidden from user)
-# ----------------------
-QUESTIONS = [
-    ("사람들과 함께 있으면 기분이 더 살아난다",
-     "사람들과 어울리는 게 좋다",
-     "혼자만의 시간이 더 편하다",
-     "E", "I"),
-
-    ("새로운 사람에게 먼저 말을 거는 편이다",
-     "자연스럽게 먼저 다가간다",
-     "상대가 다가와주길 기다린다",
-     "E", "I"),
-
-    ("정보를 받아들일 때 더 끌리는 건",
-     "지금 보이고 느껴지는 것",
-     "의미나 가능성",
-     "S", "N"),
-
-    ("아이디어를 떠올릴 때",
-     "현실적인 방법부터 생각한다",
-     "상상부터 펼쳐본다",
-     "S", "N"),
-
-    ("결정을 내릴 때 더 중요한 건",
-     "이유와 기준",
-     "사람의 마음",
-     "T", "F"),
-
-    ("갈등 상황에서 나는",
-     "문제 해결이 우선이다",
-     "감정이 상하지 않게 한다",
-     "T", "F"),
-
-    ("하루를 보낼 때",
-     "계획이 있으면 마음이 편하다",
-     "흐름에 맡기는 게 좋다",
-     "J", "P"),
-
-    ("약속이 생기면",
-     "미리 준비해둔다",
-     "그때 가서 생각한다",
-     "J", "P"),
-
-    ("여행 스타일은",
-     "일정이 있는 여행",
-     "즉흥적인 여행",
-     "J", "P"),
-
-    ("생각이 정리될 때는",
-     "말하거나 글로 풀 때",
-     "혼자 곱씹을 때",
-     "E", "I"),
-
-    ("새로운 아이디어를 들으면",
-     "실현 가능한지 본다",
-     "확장해보고 싶다",
-     "S", "N"),
-
-    ("누군가 고민을 말할 때",
-     "해결책을 제시한다",
-     "공감부터 한다",
-     "T", "F"),
+# 질문 리스트 (12개)
+questions = [
+    {"q": "주말에 갑자기 약속이 생겼을 때 나의 반응은?", "a": "오히려 좋아! 나갈 준비를 한다", "b": "조금 당황스럽지만 나갈지 고민한다", "type": "EI"},
+    {"q": "새로운 사람들과의 모임에서 나는?", "a": "먼저 말을 걸며 분위기를 주도한다", "b": "조용히 경청하며 상황을 살핀다", "type": "EI"},
+    {"q": "휴식이 필요할 때 내가 선택하는 방법은?", "a": "친구들을 만나 수다를 떨며 에너지를 얻는다", "b": "집에서 혼자 영화를 보거나 책을 읽는다", "type": "EI"},
+    
+    {"q": "길을 걷다 예쁜 꽃을 보았을 때 드는 생각은?", "a": "그냥 예쁘다! 무슨 꽃인지 궁금하다", "b": "이 꽃은 어떤 꽃말을 가졌을까? 감성적인 생각이 든다", "type": "SN"},
+    {"q": "요리를 할 때 나의 스타일은?", "a": "정해진 레시피와 계량을 정확히 따른다", "b": "손대중으로 감각적인 요리를 시도한다", "type": "SN"},
+    {"q": "미래에 대해 생각할 때 나는?", "a": "현재의 현실적인 계획에 집중한다", "b": "막연하지만 행복한 상상의 나래를 펼친다", "type": "SN"},
+    
+    {"q": "친구가 속상한 일을 털어놓을 때 나의 첫 마디는?", "a": "그래서 어떻게 됐어? 해결 방법은 뭐야?", "b": "많이 힘들었겠다... 내가 다 속상해", "type": "TF"},
+    {"q": "영화나 드라마를 볼 때 나는?", "a": "스토리의 개연성과 논리를 따진다", "b": "주인공의 감정에 이입해 눈물을 흘린다", "type": "TF"},
+    {"q": "비판을 들었을 때 나의 반응은?", "a": "나의 잘못된 부분을 분석하고 수용한다", "b": "상대방의 말투나 분위기에 상처를 받는다", "type": "TF"},
+    
+    {"q": "여행을 갈 때 나의 가방 속은?", "a": "준비물 리스트대로 꼼꼼히 챙겨져 있다", "b": "전날 밤 급하게 필요한 것만 넣는다", "type": "JP"},
+    {"q": "과제를 하거나 업무를 볼 때 나는?", "a": "계획표를 짜서 미리미리 끝낸다", "b": "마감 직전의 스릴을 즐기며 몰입한다", "type": "JP"},
+    {"q": "책상을 정리할 때 나는?", "a": "물건의 위치가 정해져 있어야 편안하다", "b": "어느 정도 어질러져 있어도 찾는 데 문제없다", "type": "JP"}
 ]
 
-# ----------------------
-# Result Theme
-# ----------------------
-THEMES = {
-    "ENFP": ("🌈 자유로운 파스텔", "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee"),
-    "INFJ": ("🌙 고요한 밤", "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429"),
-    "INTJ": ("🧊 미니멀 블루", "https://images.unsplash.com/photo-1496307042754-b4aa456c4a2d"),
-    "ISFP": ("🎨 감성 아트", "https://images.unsplash.com/photo-1526318472351-c75fcf070305"),
-    "ESFJ": ("🌸 따뜻한 꽃", "https://images.unsplash.com/photo-1490750967868-88aa4486c946"),
+# 결과 데이터
+mbti_results = {
+    "ENFP": {"theme": "무지개 빛 비눗방울", "desc": "자유로운 영혼의 소유자, 당신은 어디서나 빛나는 존재입니다."},
+    "INFJ": {"theme": "안개 낀 고요한 호수", "desc": "깊은 통찰력과 따뜻한 마음을 가진 신비로운 예술가 타입입니다."},
+    "ESTP": {"theme": "강렬한 노을빛 바다", "desc": "에너지가 넘치고 모험을 즐기는 활기찬 활동가입니다."},
+    "ISFJ": {"theme": "따뜻한 오후의 햇살", "desc": "주변 사람들을 세심하게 챙기는 포근한 수호자입니다."},
+    "ENTP": {"theme": "밤하늘의 불꽃놀이", "desc": "지적 호기심이 넘치고 새로운 아이디어를 즐기는 발명가입니다."},
+    "ISTJ": {"theme": "정갈하게 정돈된 서재", "desc": "책임감이 강하고 매사에 철저한 원칙주의자입니다."},
+    # 나머지 조합에 대한 기본 설명 제공
 }
 
-# ----------------------
-# Title
-# ----------------------
-st.markdown('<div class="title">MBTI Test</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">당신의 분위기를 알아보는 12가지 질문</div>', unsafe_allow_html=True)
+# 세션 상태 초기화
+if 'step' not in st.session_state:
+    st.session_state.step = 0
+    st.session_state.scores = {"E": 0, "I": 0, "S": 0, "N": 0, "T": 0, "F": 0, "J": 0, "P": 0}
 
-# ----------------------
-# Session
-# ----------------------
-if "answers" not in st.session_state:
-    st.session_state.answers = {}
+# 메인 화면 구현
+def main():
+    if st.session_state.step < len(questions):
+        # 테스트 진행 중
+        st.markdown(f"<h1>나의 파스텔 MBTI 찾기</h1>", unsafe_allow_html=True)
+        
+        # 진행률 표시
+        progress = (st.session_state.step + 1) / len(questions)
+        st.progress(progress)
+        st.write(f"질문 {st.session_state.step + 1} / 12")
 
-# ----------------------
-# Questions UI
-# ----------------------
-for i, (q, opt1, opt2, v1, v2) in enumerate(QUESTIONS):
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.write(f"**Q{i+1}. {q}**")
-    st.session_state.answers[i] = st.radio(
-        "",
-        [opt1, opt2],
-        index=None,
-        key=f"q{i}"
-    )
-    st.markdown('</div>', unsafe_allow_html=True)
+        current_q = questions[st.session_state.step]
+        
+        st.markdown(f"""
+            <div class="question-box">
+                <h3 style='color: #555;'>{current_q['q']}</h3>
+            </div>
+        """, unsafe_allow_html=True)
 
-# ----------------------
-# Result
-# ----------------------
-if st.button("결과 확인하기 🎀"):
-    score = {k: 0 for k in "EISNTFJP"}
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button(current_q['a']):
+                st.session_state.scores[current_q['type'][0]] += 1
+                st.session_state.step += 1
+                st.rerun()
 
-    for i, (_, opt1, opt2, v1, v2) in enumerate(QUESTIONS):
-        if st.session_state[f"q{i}"] == opt1:
-            score[v1] += 1
-        elif st.session_state[f"q{i}"] == opt2:
-            score[v2] += 1
+        with col2:
+            if st.button(current_q['b']):
+                st.session_state.scores[current_q['type'][1]] += 1
+                st.session_state.step += 1
+                st.rerun()
 
-    mbti = (
-        ("E" if score["E"] >= score["I"] else "I") +
-        ("S" if score["S"] >= score["N"] else "N") +
-        ("T" if score["T"] >= score["F"] else "F") +
-        ("J" if score["J"] >= score["P"] else "P")
-    )
+    else:
+        # 결과 계산
+        s = st.session_state.scores
+        mbti = ""
+        mbti += "E" if s["E"] >= s["I"] else "I"
+        mbti += "S" if s["S"] >= s["N"] else "N"
+        mbti += "T" if s["T"] >= s["F"] else "F"
+        mbti += "J" if s["J"] >= s["P"] else "P"
 
-    theme, img = THEMES.get(
-        mbti,
-        ("🌼 부드러운 파스텔", "https://images.unsplash.com/photo-1500534623283-312aade485b7")
-    )
+        # 결과 화면
+        st.markdown("<h1>테스트 결과</h1>", unsafe_allow_html=True)
+        
+        res = mbti_results.get(mbti, {"theme": "새벽녘 푸른 하늘", "desc": "당신은 고유의 아름다운 색을 가진 멋진 사람입니다."})
+        
+        st.markdown(f"""
+            <div class="result-card">
+                <h2 style='font-size: 48px; margin-bottom: 10px;'>{mbti}</h2>
+                <p style='font-size: 20px; color: #888;'>당신과 어울리는 이미지 테마</p>
+                <h3 style='color: #ffadad;'>✨ {res['theme']} ✨</h3>
+                <hr style='border: 0.5px solid #eee; margin: 20px 0;'>
+                <p>{res['desc']}</p>
+            </div>
+        """, unsafe_allow_html=True)
 
-    st.markdown('<div class="result-card">', unsafe_allow_html=True)
-    st.subheader(f"당신의 MBTI는 **{mbti}**")
-    st.write(f"어울리는 분위기: **{theme}**")
-    st.image(img, use_container_width=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+        if st.button("다시 테스트하기"):
+            st.session_state.step = 0
+            st.session_state.scores = {"E": 0, "I": 0, "S": 0, "N": 0, "T": 0, "F": 0, "J": 0, "P": 0}
+            st.rerun()
+
+if __name__ == "__main__":
+    main()
+
+   
+    
+    
+
+   
+       
